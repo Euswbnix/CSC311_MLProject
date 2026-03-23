@@ -24,7 +24,7 @@ print("=" * 70)
 print("1. Load Data & Build Features")
 print("=" * 70)
 
-df = pd.read_csv("cleaned_data.csv")
+df = pd.read_csv("data/cleaned_data.csv")
 y = df['target'].values
 CLASS_NAMES = ['The Persistence of Memory', 'The Starry Night', 'The Water Lily Pond']
 
