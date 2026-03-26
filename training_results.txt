@@ -1,0 +1,165 @@
+======================================================================
+1. Load Data & Build Features
+======================================================================
+  Structured Features: 22 dimensions
+    Numerical: 8 columns — ['emotion_intensity', 'sombre', 'content', 'calm', 'uneasy', 'num_colours', 'num_objects', 'willing_to_pay']
+    Binary: 14 columns
+  TF-IDF [feeling_desc]: 150 dimensions (max_features=150, min_df=5)
+  TF-IDF [food]: 50 dimensions (max_features=50, min_df=5)
+  TF-IDF [soundtrack]: 80 dimensions (max_features=80, min_df=5)
+  Text Features Combined: 280 dimensions
+  Combined Feature Matrix: (1686, 302) (struct 22 + text 280)
+  Evaluation Method: 5-fold Stratified CV (random_state=42)
+
+======================================================================
+2. Model Training — Family 1: Logistic Regression
+======================================================================
+  L2 regularization, hyperparameter C controls regularization strength (C larger means weaker regularization)
+
+--- Logistic Regression Experiment Results ---
+  Model                                         |   Train |         CV Acc |     Gap
+  ------------------------------------------------------------------------------------
+  LogReg C=0.01  [struct 22d]                   | 82.86% | 82.86% ± 1.85% | -0.00%
+  LogReg C=0.1   [struct 22d]                   | 84.73% | 84.46% ± 1.80% |  0.27%
+  LogReg C=1.0   [struct 22d]                   | 85.91% | 84.82% ± 1.18% |  1.10%
+  LogReg C=10.0  [struct 22d]                   | 86.14% | 84.88% ± 1.36% |  1.26%
+  LogReg C=0.01  [combined 302d]                | 85.25% | 84.40% ± 2.04% |  0.84%
+  LogReg C=0.05  [combined 302d]                | 88.15% | 86.30% ± 1.43% |  1.85%
+  LogReg C=0.1   [combined 302d]                | 89.37% | 87.31% ± 1.02% |  2.06%
+  LogReg C=0.2   [combined 302d]                | 90.61% | 87.84% ± 0.84% |  2.77%
+  LogReg C=0.3   [combined 302d]                | 91.56% | 88.37% ± 0.83% |  3.19%
+  LogReg C=0.5   [combined 302d]                | 92.42% | 88.37% ± 0.97% |  4.05%
+  LogReg C=1.0   [combined 302d]                | 93.73% | 88.37% ± 0.91% |  5.35%
+  LogReg C=2.0   [combined 302d]                | 94.94% | 87.84% ± 0.54% |  7.10%
+  LogReg C=5.0   [combined 302d]                | 96.09% | 87.25% ± 1.15% |  8.84%
+
+  ★ LogReg optimal: LogReg C=0.3   [combined 302d], CV=88.37%
+
+======================================================================
+3. Model Training — Family 2: Naive Bayes
+======================================================================
+  Gaussian NB for continuous features, Multinomial NB for TF-IDF text features
+
+--- Naive Bayes Experiment Results ---
+  Model                                         |   Train |         CV Acc |     Gap
+  ------------------------------------------------------------------------------------
+  Gaussian NB [struct 22d]                      | 80.63% | 80.19% ± 2.78% |  0.45%
+  Multinomial NB [text 280d]                    | 83.73% | 80.31% ± 1.38% |  3.43%
+  Multinomial NB alpha=0.1 [text 280d]          | 84.34% | 80.13% ± 1.38% |  4.21%
+  Multinomial NB alpha=0.5 [text 280d]          | 83.99% | 80.19% ± 1.39% |  3.80%
+  Multinomial NB alpha=1.0 [text 280d]          | 83.73% | 80.31% ± 1.38% |  3.43%
+  Multinomial NB alpha=2.0 [text 280d]          | 83.50% | 79.89% ± 1.41% |  3.60%
+  Multinomial NB [combined 302d]                | 90.09% | 88.02% ± 1.04% |  2.08%
+
+  ★ NB optimal: Multinomial NB [combined 302d], CV=88.02%
+
+======================================================================
+4. Model Training — Family 3: Decision Tree
+======================================================================
+Hyperparameter max_depth controls tree complexity
+
+--- Decision Tree Experiment Results ---
+  Model                                         |   Train |         CV Acc |     Gap
+  ------------------------------------------------------------------------------------
+  DTree depth=3     [struct 22d]                | 77.64% | 76.69% ± 1.54% |  0.95%
+  DTree depth=5     [struct 22d]                | 83.14% | 79.65% ± 2.04% |  3.49%
+  DTree depth=7     [struct 22d]                | 88.45% | 78.53% ± 1.65% |  9.92%
+  DTree depth=10    [struct 22d]                | 94.69% | 78.65% ± 2.76% | 16.04%
+  DTree depth=15    [struct 22d]                | 97.61% | 77.58% ± 2.08% | 20.03%
+  DTree depth=None  [struct 22d]                | 97.69% | 77.64% ± 2.24% | 20.05%
+  DTree depth=5     [combined 302d]             | 84.64% | 79.42% ± 2.60% |  5.22%
+  DTree depth=7     [combined 302d]             | 88.70% | 79.89% ± 1.58% |  8.81%
+  DTree depth=10    [combined 302d]             | 94.04% | 80.25% ± 0.90% | 13.79%
+  DTree depth=15    [combined 302d]             | 97.11% | 79.48% ± 2.05% | 17.63%
+
+  ★ DTree best: DTree depth=10    [combined 302d], CV=80.25%
+
+======================================================================
+5. Three-race horizontal comparison
+======================================================================
+
+--- Best models from each family ---
+  Model                                         |   Train |         CV Acc |     Gap
+  ------------------------------------------------------------------------------------
+  LogReg C=0.3   [combined 302d]                | 91.56% | 88.37% ± 0.83% |  3.19%
+  Multinomial NB [combined 302d]                | 90.09% | 88.02% ± 1.04% |  2.08%
+  DTree depth=10    [combined 302d]             | 94.04% | 80.25% ± 0.90% | 13.79%
+
+  ★★★ Final selection: LogReg C=0.3   [combined 302d]
+       CV Accuracy = 88.37% ± 0.83%
+       Train-CV Gap = 3.19%
+
+  Selection rationale:
+    1. CV accuracy highest (88.37%)
+    2. Train-CV gap = 3.19%, controllable overfitting
+    3. Logistic Regression inference requires only matrix multiplication, satisfying pred.py numpy restriction
+
+======================================================================
+6. Hold-out test set evaluation (80/20 split)
+======================================================================
+  Model: LogReg C=0.3
+  Features: combined (302d)
+  Training set: 1348, Test set: 338
+
+  Training set accuracy: 91.17%
+  Test set accuracy: 90.24%
+  Gap: 0.94%
+
+  === Classification Report ===
+                           precision    recall  f1-score   support
+
+The Persistence of Memory       0.95      0.92      0.94       112
+         The Starry Night       0.87      0.88      0.88       113
+      The Water Lily Pond       0.89      0.90      0.89       113
+
+                 accuracy                           0.90       338
+                macro avg       0.90      0.90      0.90       338
+             weighted avg       0.90      0.90      0.90       338
+
+  === Confusion Matrix ===
+                                 |  Pred:Memory |  Pred:Starry |    Pred:Lily
+  ---------------------------------------------------------------------------
+                     True:Memory |          103 |            5 |            4
+                     True:Starry |            4 |          100 |            9
+                       True:Lily |            1 |           10 |          102
+
+======================================================================
+8. Feature importance (LogReg |coef| mean across classes, Top-20)
+======================================================================
+
+  Rank  Feature                                       | |coef| mean
+  -----------------------------------------------------------------
+     1  season_Winter                                 |     0.9997  ████████████████████
+     2  tfidf_feeling_desc::time                      |     0.9787  ███████████████████
+     3  uneasy                                        |     0.9722  ███████████████████
+     4  content                                       |     0.9233  ██████████████████
+     5  tfidf_food::salad                             |     0.8438  ████████████████
+     6  season_Spring                                 |     0.7937  ███████████████
+     7  sombre                                        |     0.7929  ███████████████
+     8  tfidf_food::blueberry                         |     0.7886  ███████████████
+     9  num_objects                                   |     0.7618  ███████████████
+    10  season_Fall                                   |     0.6667  █████████████
+    11  tfidf_feeling_desc::night                     |     0.6636  █████████████
+    12  tfidf_feeling_desc::sky                       |     0.6490  ████████████
+    13  room_Bedroom                                  |     0.6345  ████████████
+    14  num_colours                                   |     0.5942  ███████████
+    15  tfidf_feeling_desc::awe                       |     0.5789  ███████████
+    16  tfidf_feeling_desc::happy                     |     0.5645  ███████████
+    17  tfidf_soundtrack::slow                        |     0.5032  ██████████
+    18  tfidf_soundtrack::jazz                        |     0.4026  ████████
+    19  tfidf_soundtrack::intense                     |     0.3903  ███████
+    20  tfidf_food::tea                               |     0.3893  ███████
+
+======================================================================
+8. Summary
+======================================================================
+
+  Final model:     Logistic Regression (L2, C=0.3)
+  Feature dimension:     302  (structured 22 + text TF-IDF 280)
+  5-fold CV:    88.37% ± 0.83%
+  Hold-out:     90.24%
+  Train-CV gap: 3.19%
+
+  Comparison:
+    vs Naive Bayes:    +0.4% CV accuracy
+    vs Decision Tree:  +8.1% CV accuracy
